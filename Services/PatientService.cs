@@ -1,46 +1,96 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using SmartJournalSystem.Models;
 
-namespace SmartJournalSystem.Services;
-
-public class PatientService
+namespace SmartJournalSystem.Services
 {
-  private List<Patient> patients = new();
-  private List<JournalEntry> journalEntries = new();
-  public void RegisterPatient(Patient patient)
+  // En enkel service för att hantera patienter och journalanteckningar i minnet.
+  public class PatientService
   {
-    patient.Id = patients.Count + 1;
-    patients.Add(patient);
-    Console.WriteLine($"Patient '{patient.Name}' registered seccessfully.");
-  }
-  public void ListAll()
-  {
-    foreach (var p in patients)
+    // Interna listor (hålls i minnet i detta exempel)
+    private readonly List<Patient> patients = new();
+    private readonly List<JournalEntry> journalEntries = new();
+
+    // Registrera ny patient
+    public void RegisterPatient(Patient patient)
     {
-      Console.WriteLine($"- [{p.Id}] {p.Name}, {p.Age} years old");
+      patient.Id = patients.Count + 1;
+      patients.Add(patient);
+      Console.WriteLine($"✅ Patient '{patient.Name}' registered with Id {patient.Id}.");
     }
-  }
-  public Patient? GetPatient(int id) => patients.FirstOrDefault(p => p.Id == id);
-  //Add journalentry
-  public void AddJournalEntry(int patientId, string content, PermissionLevel permission)
-  {
-    journalEntries.Add(new JournalEntry { Id = journalEntries.Count + 1, PatientId = patientId, Content = content, Permission = permission });
-    Console.WriteLine("Journal entry added successfully.");
-  }
-  // Retrive records depending on the user
-  public List<JournalEntry> GetJournalEntries(User user, int patientId)
-  {
-    if (user.Role == Role.Patient && user.AssignedPatientIds.Contains(patientId))
+
+    // Hämta hela listan med patienter (används i admin-menyn)
+    public List<Patient> GetAllPatients()
     {
-      return journalEntries.Where(j => j.PatientId == patientId).ToList();
+      // Returnera en ny lista så att den interna listan inte kan modifieras av avsikten
+      return patients.ToList();
     }
-    else if (user.Role == Role.Staff && user.AssignedPatientIds.Contains(patientId))
+
+    // Hämta enskild patient efter id
+    public Patient? GetPatient(int id)
     {
-      return journalEntries.Where(j => j.PatientId == patientId).ToList();
+      return patients.FirstOrDefault(p => p.Id == id);
     }
-    else if (user.Role == Role.Admin)
+
+    // Lägg till journalanteckning för patient
+    public void AddJournalEntry(int patientId, string content, PermissionLevel permission)
     {
-      return journalEntries.Where(j => j.PatientId == patientId).ToList();
+      // validera att patient existerar
+      var patient = GetPatient(patientId);
+      if (patient == null)
+      {
+        Console.WriteLine("❌ Patient not found.");
+        return;
+      }
+
+      journalEntries.Add(new JournalEntry
+      {
+        Id = journalEntries.Count + 1,
+        PatientId = patientId,
+        Content = content,
+        Permission = permission,
+        CreatedAt = DateTime.Now
+      });
+
+      Console.WriteLine("✅ Journal entry added successfully.");
     }
-    return new List<JournalEntry>();
+
+    // Hämta journalanteckningar för en patient med behörighetskontroll utifrån user
+    public List<JournalEntry> GetJournalEntries(User user, int patientId)
+    {
+      // Hämta alla anteckningar för patienten
+      var entriesForPatient = journalEntries.Where(j => j.PatientId == patientId).ToList();
+
+      // Admin ser allt
+      if (user.Role == Role.Admin)
+      {
+        return entriesForPatient;
+      }
+
+      // Personal måste vara tilldelad patienten för att se något
+      if (user.Role == Role.Staff)
+      {
+        if (!user.AssignedPatientIds.Contains(patientId))
+          return new List<JournalEntry>();
+
+        // Staff som är tilldelad får se alla anteckningar för patienten
+        return entriesForPatient;
+      }
+
+      // Patient ser endast anteckningar markerade som Patient eller AllStaff, och endast för sin egen patient-id
+      if (user.Role == Role.Patient)
+      {
+        if (!user.AssignedPatientIds.Contains(patientId))
+          return new List<JournalEntry>();
+
+        return entriesForPatient
+            .Where(j => j.Permission == PermissionLevel.Patient || j.Permission == PermissionLevel.AllStaff)
+            .ToList();
+      }
+
+      // Default: ingen åtkomst
+      return new List<JournalEntry>();
+    }
   }
 }
