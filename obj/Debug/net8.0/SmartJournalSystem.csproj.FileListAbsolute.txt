@@ -1,0 +1,14 @@
+C:\Users\lindb\repos\SmartJournalSystem\bin\Debug\net8.0\SmartJournalSystem.exe
+C:\Users\lindb\repos\SmartJournalSystem\bin\Debug\net8.0\SmartJournalSystem.deps.json
+C:\Users\lindb\repos\SmartJournalSystem\bin\Debug\net8.0\SmartJournalSystem.runtimeconfig.json
+C:\Users\lindb\repos\SmartJournalSystem\bin\Debug\net8.0\SmartJournalSystem.dll
+C:\Users\lindb\repos\SmartJournalSystem\bin\Debug\net8.0\SmartJournalSystem.pdb
+C:\Users\lindb\repos\SmartJournalSystem\obj\Debug\net8.0\SmartJournalSystem.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\lindb\repos\SmartJournalSystem\obj\Debug\net8.0\SmartJournalSystem.AssemblyInfoInputs.cache
+C:\Users\lindb\repos\SmartJournalSystem\obj\Debug\net8.0\SmartJournalSystem.AssemblyInfo.cs
+C:\Users\lindb\repos\SmartJournalSystem\obj\Debug\net8.0\SmartJournalSystem.csproj.CoreCompileInputs.cache
+C:\Users\lindb\repos\SmartJournalSystem\obj\Debug\net8.0\SmartJournalSystem.dll
+C:\Users\lindb\repos\SmartJournalSystem\obj\Debug\net8.0\refint\SmartJournalSystem.dll
+C:\Users\lindb\repos\SmartJournalSystem\obj\Debug\net8.0\SmartJournalSystem.pdb
+C:\Users\lindb\repos\SmartJournalSystem\obj\Debug\net8.0\SmartJournalSystem.genruntimeconfig.cache
+C:\Users\lindb\repos\SmartJournalSystem\obj\Debug\net8.0\ref\SmartJournalSystem.dll

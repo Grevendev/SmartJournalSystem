@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SmartJournalSystem")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+18b79dbc45d686543f94ef66ce7fb0cb7301d507")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+36653e6a41a0aab10283a0e423576b97c5c4d1c2")]
 [assembly: System.Reflection.AssemblyProductAttribute("SmartJournalSystem")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SmartJournalSystem")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
