@@ -1,0 +1,36 @@
+name: Build SmartJournalSystem
+
+# Kör workflowen när du pushar till main
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Klona repo
+      - uses: actions/checkout@v3
+
+      # Installera .NET 8 SDK
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+
+      # Restore dependencies
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # Build project
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      # Run tests (om du har testprojekt)
+      # - name: Test
+      #   run: dotnet test --no-build --verbosity normal
