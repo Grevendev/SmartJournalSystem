@@ -1,4 +1,5 @@
-﻿using SmartJournalSystem.Models;
+﻿using System.Reflection.Metadata;
+using SmartJournalSystem.Models;
 using SmartJournalSystem.Services;
 
 var userService = new UserService();
@@ -42,7 +43,8 @@ while (true)
   else if (currentUser.Role == Role.Staff)
   {
     Console.WriteLine("1. View assigned patients");
-    Console.WriteLine("2. Logout");
+    Console.WriteLine("2. Add journal entry");
+    Console.WriteLine("3. Logout");
     Console.Write("Choice: ");
     var choice = Console.ReadLine();
 
@@ -55,7 +57,31 @@ while (true)
           Console.WriteLine($" - {patient.Name}, {patient.Age} years old");
       }
     }
-    else if (choice == "2") break;
+    else if (choice == "2")
+    {
+      Console.Write("Patient Id: ");
+      int pid = int.Parse(Console.ReadLine() ?? "0");
+      var patient = patientService.GetPatient(pid);
+      if (patient == null || !currentUser.AssignedPatientIds.Contains(pid))
+      {
+        Console.WriteLine("You cannot add journal entry for this patient.");
+      }
+      else
+      {
+        Console.Write("Entry content: ");
+        string content = Console.ReadLine() ?? "";
+        Console.WriteLine("Permission level? (1=StaffOnly, 20AllStaff, 3=Patient): ");
+        int perm = int.Parse(Console.ReadLine() ?? "1");
+        PermissionLevel level = perm switch
+        {
+          2 => PermissionLevel.AllStaff,
+          3 => PermissionLevel.Patient,
+          _ => PermissionLevel.StaffOnly
+        };
+        patientService.AddJournalEntry(pid, content, level);
+      }
+    }
+    else if (choice == "3") break;
   }
   else if (currentUser.Role == Role.Patient)
   {
