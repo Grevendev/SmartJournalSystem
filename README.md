@@ -24,16 +24,6 @@ This system is designed as a learning project to practice **object-oriented prog
 
 ---
 
-## Project Structure
-├── Models/
-│ ├── Patient.cs
-│ ├── User.cs
-│ └── JournalEntry.cs
-├── Services/
-│ ├── PatientService.cs
-│ ├── UserService.cs
-│ └── JournalService.cs
-├── Program.cs
-└── README.md
+
 
 ---
