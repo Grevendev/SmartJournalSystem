@@ -4,8 +4,8 @@ namespace SmartJournalSystem.Models;
 public enum PermissionLevel
 {
   StaffOnly, // Authorized personnel only
-  AllStaff, // All personnel can see
-  Patient, // Patient kan see
+  AllStaff, // All staff member
+  Patient, // Patient can view
 }
 public class JournalEntry
 {
@@ -13,5 +13,5 @@ public class JournalEntry
   public int PatientId { get; set; }
   public string Content { get; set; } = "";
   public PermissionLevel Permission { get; set; } = PermissionLevel.StaffOnly;
-  public DateTime CreateAt { get; set; } = DateTime.Now;
+  public DateTime CreatedAt { get; set; } = DateTime.Now;
 }
