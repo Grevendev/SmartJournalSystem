@@ -1,35 +1,64 @@
 using SmartJournalSystem.Models;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.Json;
 
-namespace SmartJournalSystem.Services;
-
-//Handles user login and authorization
-public class UserService
+namespace SmartJournalSystem.Services
 {
-  private List<User> users = new();
-  public UserService()
+  public class UserService
   {
-    //Predefined example users
-    var admin = new User { Username = "admin", Password = "admin123", Role = Role.Admin };
-    var staff1 = new User { Username = "dr_alice", Password = "pass123", Role = Role.Staff };
-    var staff2 = new User { Username = "dr_bob", Password = "pass123", Role = Role.Staff };
-    var patient1 = new User { Username = "john", Password = "john123", Role = Role.Patient };
-    var patient2 = new User { Username = "jane", Password = "jane123", Role = Role.Patient };
+    private List<User> users = new();
 
-    //Assign patients to staff
-    staff1.AssignedPatientIds.Add(1);
-    staff2.AssignedPatientIds.Add(2);
-
-    users.AddRange([admin, staff1, staff2, patient1, patient2]);
-  }
-  public User? Login(string username, string password)
-  {
-    var user = users.FirstOrDefault(u => u.Username == username && u.Password == password);
-    if (user == null)
+    public void AddUser(User user)
     {
-      Console.WriteLine("Invalid credentials.");
-      return null;
+      int nextId = users.Any() ? users.Max(u => u.Id) + 1 : 1;
+      user.Id = nextId;
+      users.Add(user);
     }
-    Console.WriteLine($"Welcome {user.Username} ! You are logged in as {user.Role}.");
-    return user;
+
+    public List<User> GetAllUsers()
+    {
+      return users.ToList();
+    }
+
+    public User? FindByName(string name)
+    {
+      if (string.IsNullOrWhiteSpace(name)) return null;
+      return users.FirstOrDefault(u => u.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    // ===== JSON persistence =====
+    public void SaveData()
+    {
+      var dataDir = "data";
+      if (!Directory.Exists(dataDir))
+        Directory.CreateDirectory(dataDir);
+
+      var options = new JsonSerializerOptions { WriteIndented = true };
+      var json = JsonSerializer.Serialize(users, options);
+      File.WriteAllText(Path.Combine(dataDir, "users.json"), json);
+      Console.WriteLine("💾 User data saved to 'data/users.json'");
+    }
+
+    public void LoadData()
+    {
+      var dataDir = "data";
+      if (!Directory.Exists(dataDir))
+        return;
+
+      var file = Path.Combine(dataDir, "users.json");
+      if (!File.Exists(file))
+        return;
+
+      var json = File.ReadAllText(file);
+      var loaded = JsonSerializer.Deserialize<List<User>>(json);
+      if (loaded != null)
+      {
+        users = loaded;
+        Console.WriteLine($"📂 Loaded {users.Count} users from 'data/users.json'");
+      }
+    }
   }
 }

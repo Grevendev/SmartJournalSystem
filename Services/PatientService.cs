@@ -1,42 +1,48 @@
+using SmartJournalSystem.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using SmartJournalSystem.Models;
+using System.Text.Json;
 
 namespace SmartJournalSystem.Services
 {
-  // En enkel service för att hantera patienter och journalanteckningar i minnet.
+  // Enkel in-memory service för patienter och journaler + JSON-persistens
   public class PatientService
   {
-    // Interna listor (hålls i minnet i detta exempel)
-    private readonly List<Patient> patients = new();
-    private readonly List<JournalEntry> journalEntries = new();
+    private List<Patient> patients = new();
 
-    // Registrera ny patient
+    // Registrera patient (sätter Id automatiskt)
     public void RegisterPatient(Patient patient)
     {
-      patient.Id = patients.Count + 1;
+      int nextId = patients.Any() ? patients.Max(p => p.Id) + 1 : 1;
+      patient.Id = nextId;
       patients.Add(patient);
       Console.WriteLine($"✅ Patient '{patient.Name}' registered with Id {patient.Id}.");
     }
 
-    // Hämta hela listan med patienter (används i admin-menyn)
+    // Hämta alla patienter
     public List<Patient> GetAllPatients()
     {
-      // Returnera en ny lista så att den interna listan inte kan modifieras av avsikten
       return patients.ToList();
     }
 
-    // Hämta enskild patient efter id
+    // Hämta patient via id
     public Patient? GetPatient(int id)
     {
       return patients.FirstOrDefault(p => p.Id == id);
     }
 
-    // Lägg till journalanteckning för patient
-    public void AddJournalEntry(int patientId, string content, PermissionLevel permission)
+    // Hitta patient via namn (case-insensitive)
+    public Patient? FindByName(string name)
     {
-      // validera att patient existerar
+      if (string.IsNullOrWhiteSpace(name)) return null;
+      return patients.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    // Lägg till journalanteckning för en patient (sätter entry.Id automatiskt)
+    public void AddJournalEntry(int patientId, string content, PermissionLevel permission, string author = "")
+    {
       var patient = GetPatient(patientId);
       if (patient == null)
       {
@@ -44,53 +50,89 @@ namespace SmartJournalSystem.Services
         return;
       }
 
-      journalEntries.Add(new JournalEntry
+      int nextEntryId = patients.SelectMany(p => p.JournalEntries).Any()
+          ? patients.SelectMany(p => p.JournalEntries).Max(e => e.Id) + 1
+          : 1;
+
+      var entry = new JournalEntry
       {
-        Id = journalEntries.Count + 1,
+        Id = nextEntryId,
         PatientId = patientId,
         Content = content,
+        Author = author,
         Permission = permission,
         CreatedAt = DateTime.Now
-      });
+      };
 
-      Console.WriteLine("✅ Journal entry added successfully.");
+      patient.JournalEntries.Add(entry);
+      Console.WriteLine($"✅ Journal entry added to patient {patient.Name} (Entry Id {entry.Id}).");
     }
 
-    // Hämta journalanteckningar för en patient med behörighetskontroll utifrån user
+    // Hämta journalanteckningar beroende på användarens rättigheter
     public List<JournalEntry> GetJournalEntries(User user, int patientId)
     {
-      // Hämta alla anteckningar för patienten
-      var entriesForPatient = journalEntries.Where(j => j.PatientId == patientId).ToList();
+      var patient = GetPatient(patientId);
+      if (patient == null) return new List<JournalEntry>();
 
       // Admin ser allt
       if (user.Role == Role.Admin)
-      {
-        return entriesForPatient;
-      }
+        return patient.JournalEntries.ToList();
 
-      // Personal måste vara tilldelad patienten för att se något
+      // Staff måste vara tilldelad patienten
       if (user.Role == Role.Staff)
       {
         if (!user.AssignedPatientIds.Contains(patientId))
           return new List<JournalEntry>();
 
-        // Staff som är tilldelad får se alla anteckningar för patienten
-        return entriesForPatient;
+        // Tilldelad staff ser alla anteckningar (även StaffOnly)
+        return patient.JournalEntries.ToList();
       }
 
-      // Patient ser endast anteckningar markerade som Patient eller AllStaff, och endast för sin egen patient-id
+      // Patient kan bara se anteckningar som är markerade för patient eller AllStaff
       if (user.Role == Role.Patient)
       {
         if (!user.AssignedPatientIds.Contains(patientId))
           return new List<JournalEntry>();
 
-        return entriesForPatient
-            .Where(j => j.Permission == PermissionLevel.Patient || j.Permission == PermissionLevel.AllStaff)
+        return patient.JournalEntries
+            .Where(e => e.Permission == PermissionLevel.Patient || e.Permission == PermissionLevel.AllStaff)
             .ToList();
       }
 
-      // Default: ingen åtkomst
       return new List<JournalEntry>();
+    }
+
+    // ===== JSON persistence (patients inkluderar JournalEntries) =====
+
+    public void SaveData()
+    {
+      var dataDir = "data";
+      if (!Directory.Exists(dataDir))
+        Directory.CreateDirectory(dataDir);
+
+      var options = new JsonSerializerOptions { WriteIndented = true };
+      var patientsJson = JsonSerializer.Serialize(patients, options);
+      File.WriteAllText(Path.Combine(dataDir, "patients.json"), patientsJson);
+      Console.WriteLine("💾 Patient data saved to 'data/patients.json'");
+    }
+
+    public void LoadData()
+    {
+      var dataDir = "data";
+      if (!Directory.Exists(dataDir))
+        return;
+
+      var file = Path.Combine(dataDir, "patients.json");
+      if (!File.Exists(file))
+        return;
+
+      var json = File.ReadAllText(file);
+      var loaded = JsonSerializer.Deserialize<List<Patient>>(json);
+      if (loaded != null)
+      {
+        patients = loaded;
+        Console.WriteLine($"📂 Loaded {patients.Count} patients from 'data/patients.json'");
+      }
     }
   }
 }

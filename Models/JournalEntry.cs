@@ -1,17 +1,23 @@
-namespace SmartJournalSystem.Models;
+using System;
 
+namespace SmartJournalSystem.Models
+{
+  // Behörighetsnivå för journalanteckningar
+  public enum PermissionLevel
+  {
+    StaffOnly, // Endast tilldelad personal
+    AllStaff,  // All personal
+    Patient    // Patient kan se
+  }
 
-public enum PermissionLevel
-{
-  StaffOnly, // Authorized personnel only
-  AllStaff, // All staff member
-  Patient, // Patient can view
-}
-public class JournalEntry
-{
-  public int Id { get; set; }
-  public int PatientId { get; set; }
-  public string Content { get; set; } = "";
-  public PermissionLevel Permission { get; set; } = PermissionLevel.StaffOnly;
-  public DateTime CreatedAt { get; set; } = DateTime.Now;
+  // En journalanteckning kopplad till en patient
+  public class JournalEntry
+  {
+    public int Id { get; set; }
+    public int PatientId { get; set; }
+    public string Content { get; set; } = string.Empty;
+    public string Author { get; set; } = string.Empty;
+    public PermissionLevel Permission { get; set; } = PermissionLevel.StaffOnly;
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+  }
 }

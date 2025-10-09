@@ -1,15 +1,25 @@
-namespace SmartJournalSystem.Models;
+using System.Collections.Generic;
 
-public enum Role { Admin, Staff, Patient, }
-
-public class User
+namespace SmartJournalSystem.Models
 {
-  public int Id { get; set; }
-  public string Name { get; set; } = "";
-  public string Username { get; set; } = "";
-  public string Password { get; set; } = "";
-  public Role Role { get; set; }
+  // Roller i systemet
+  public enum Role
+  {
+    Admin,
+    Staff,
+    Patient
+  }
 
-  // For staff and Patient: which patient IDs they have access to
-  public List<int> AssignedPatientIds { get; set; } = new List<int>();
+  // Representerar en användare (admin, personal eller patient)
+  public class User
+  {
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;     // Visningsnamn / login-namn i detta demo
+    public string Username { get; set; } = string.Empty; // (ej nödvändig i demo, men bra att ha)
+    public string Password { get; set; } = string.Empty; // TODO: hash i verkligt system
+    public Role Role { get; set; }
+
+    // Vilka patient-IDs användaren är tilldelad (för staff) eller vilken patient en patient-användare hör till
+    public List<int> AssignedPatientIds { get; set; } = new();
+  }
 }

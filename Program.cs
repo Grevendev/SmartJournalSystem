@@ -1,149 +1,219 @@
 ﻿using SmartJournalSystem.Models;
 using SmartJournalSystem.Services;
-
-// ======== STEG 1: INITIERA PATIENTSERVICE OCH TESTDATA =========
+using System;
+using System.Linq;
 
 var patientService = new PatientService();
+var userService = new UserService();
 
-// Skapa patienter
-var patient1 = new Patient { Name = "Alice", Age = 30 };
-patientService.RegisterPatient(patient1);
+// Ladda data om den finns
+patientService.LoadData();
+userService.LoadData();
 
-var patient2 = new Patient { Name = "Bob", Age = 45 };
-patientService.RegisterPatient(patient2);
+// Skapa testdata om tomt
+if (!userService.GetAllUsers().Any())
+{
+  Console.WriteLine("🔧 Creating initial test data...");
 
-// Skapa patient-användare
-var patientUser1 = new User { Name = "AliceUser", Role = Role.Patient };
-patientUser1.AssignedPatientIds.Add(patient1.Id);
+  var p1 = new Patient { Name = "Alice", Age = 30 };
+  var p2 = new Patient { Name = "Bob", Age = 45 };
+  patientService.RegisterPatient(p1);
+  patientService.RegisterPatient(p2);
 
-var patientUser2 = new User { Name = "BobUser", Role = Role.Patient };
-patientUser2.AssignedPatientIds.Add(patient2.Id);
+  // skapa användare och tilldela patient-ids
+  var admin = new User { Name = "AdminUser", Role = Role.Admin };
+  var staff = new User { Name = "Dr.Smith", Role = Role.Staff };
+  var patientUser1 = new User { Name = "AliceUser", Role = Role.Patient };
+  patientUser1.AssignedPatientIds.Add(p1.Id);
 
-// Skapa staff och tilldela patienter
-var staffUser = new User { Name = "Dr. Smith", Role = Role.Staff };
-staffUser.AssignedPatientIds.Add(patient1.Id);
-staffUser.AssignedPatientIds.Add(patient2.Id);
+  staff.AssignedPatientIds.Add(p1.Id);
+  staff.AssignedPatientIds.Add(p2.Id);
 
-// Skapa admin
-var adminUser = new User { Name = "AdminUser", Role = Role.Admin };
+  userService.AddUser(admin);
+  userService.AddUser(staff);
+  userService.AddUser(patientUser1);
 
-// Lägg till journalanteckningar
-patientService.AddJournalEntry(patient1.Id, "General checkup OK", PermissionLevel.Patient);
-patientService.AddJournalEntry(patient1.Id, "Staff-only note", PermissionLevel.StaffOnly);
-patientService.AddJournalEntry(patient2.Id, "Routine test completed", PermissionLevel.Patient);
+  // journaler
+  patientService.AddJournalEntry(p1.Id, "General checkup OK", PermissionLevel.Patient, "Dr.Smith");
+  patientService.AddJournalEntry(p1.Id, "Staff-only note", PermissionLevel.StaffOnly, "Dr.Smith");
+  patientService.AddJournalEntry(p2.Id, "Routine test completed", PermissionLevel.Patient, "Dr.Smith");
 
-// Lista av alla användare
-var users = new List<User> { patientUser1, patientUser2, staffUser, adminUser };
+  // spara testdata
+  userService.SaveData();
+  patientService.SaveData();
+}
 
-// ======== STEG 2: LOGIN LOOP =========
+var users = userService.GetAllUsers();
 
+// ---------- LOGIN ----------
 User? currentUser = null;
-
 while (currentUser == null)
 {
   Console.Write("Enter your username: ");
-  var input = Console.ReadLine();
-
-  currentUser = users.FirstOrDefault(u => u.Name.Equals(input, StringComparison.OrdinalIgnoreCase));
-
+  var input = Console.ReadLine() ?? "";
+  currentUser = userService.FindByName(input);
   if (currentUser == null)
-    Console.WriteLine("User not found. Try again.");
+    Console.WriteLine("User not found, try again.");
+  else
+    Console.WriteLine($"Welcome {currentUser.Name} ({currentUser.Role})");
 }
 
-// ======== STEG 3: HUVUDMENY BASERAT PÅ ROLL =========
-
-while (true)
+// ---------- HUVUDLOOP ----------
+bool running = true;
+while (running)
 {
-  Console.WriteLine($"\nWelcome, {currentUser.Name}! Role: {currentUser.Role}");
+  Console.WriteLine("\n=== Main Menu ===");
+  Console.WriteLine("1) View my assigned patients (Staff) / View my patient record (Patient)");
+  Console.WriteLine("2) Add journal entry (Staff)");
+  Console.WriteLine("3) Admin: create patient / user / assign");
+  Console.WriteLine("4) Save data");
+  Console.WriteLine("0) Exit");
+  Console.Write("Choice: ");
+  var choice = Console.ReadLine() ?? "";
 
-  if (currentUser.Role == Role.Patient)
+  switch (choice)
   {
-    Console.WriteLine("1. View my journal entries");
-    Console.WriteLine("2. Logout");
-    Console.Write("Choice: ");
-    var choice = Console.ReadLine();
-
-    if (choice == "1")
-    {
-      foreach (var pid in currentUser.AssignedPatientIds)
+    case "1":
+      if (currentUser.Role == Role.Staff)
       {
-        var entries = patientService.GetJournalEntries(currentUser, pid);
-        var patient = patientService.GetPatient(pid);
-        Console.WriteLine($"\nJournal for {patient?.Name}:");
-
-        foreach (var entry in entries)
+        Console.WriteLine("\n-- Assigned patients --");
+        foreach (var pid in currentUser.AssignedPatientIds)
         {
-          if (entry.Permission == PermissionLevel.Patient || entry.Permission == PermissionLevel.AllStaff)
-          {
-            Console.WriteLine($"- [{entry.CreatedAt}] {entry.Content} (Permission: {entry.Permission})");
-          }
+          var p = patientService.GetPatient(pid);
+          if (p != null)
+            Console.WriteLine($"{p.Id}: {p.Name} ({p.Age} y)");
         }
       }
-    }
-    else if (choice == "2")
-    {
-      Console.WriteLine("Logging out...");
-      break;
-    }
-  }
-  else if (currentUser.Role == Role.Staff)
-  {
-    Console.WriteLine("1. View assigned patients");
-    Console.WriteLine("2. Add journal entry");
-    Console.WriteLine("3. Logout");
-    Console.Write("Choice: ");
-    var choice = Console.ReadLine();
-
-    if (choice == "1")
-    {
-      foreach (var pid in currentUser.AssignedPatientIds)
+      else if (currentUser.Role == Role.Patient)
       {
-        var patient = patientService.GetPatient(pid);
-        if (patient != null)
-          Console.WriteLine($"- {patient.Name}, {patient.Age} years old");
-      }
-    }
-    else if (choice == "2")
-    {
-      Console.Write("Patient Id: ");
-      int pid = int.Parse(Console.ReadLine() ?? "0");
-      var patient = patientService.GetPatient(pid);
-
-      if (patient == null || !currentUser.AssignedPatientIds.Contains(pid))
-      {
-        Console.WriteLine("You cannot add journal entry for this patient.");
+        Console.WriteLine("\n-- My journal entries --");
+        foreach (var pid in currentUser.AssignedPatientIds)
+        {
+          var entries = patientService.GetJournalEntries(currentUser, pid);
+          var p = patientService.GetPatient(pid);
+          Console.WriteLine($"\nJournal for {p?.Name}:");
+          foreach (var e in entries)
+            Console.WriteLine($"- [{e.CreatedAt}] {e.Author}: {e.Content} ({e.Permission})");
+        }
       }
       else
       {
-        Console.Write("Entry content: ");
-        string content = Console.ReadLine() ?? "";
-        Console.WriteLine("Permission level? (1=StaffOnly, 2=AllStaff, 3=Patient): ");
-        int perm = int.Parse(Console.ReadLine() ?? "1");
-        PermissionLevel level = perm switch
-        {
-          2 => PermissionLevel.AllStaff,
-          3 => PermissionLevel.Patient,
-          _ => PermissionLevel.StaffOnly
-        };
-        patientService.AddJournalEntry(pid, content, level);
+        Console.WriteLine("This option is for Staff or Patient roles.");
       }
-    }
-    else if (choice == "3") break;
-  }
-  else if (currentUser.Role == Role.Admin)
-  {
-    Console.WriteLine("1. View all users");
-    Console.WriteLine("2. Logout");
-    Console.Write("Choice: ");
-    var choice = Console.ReadLine();
+      break;
 
-    if (choice == "1")
-    {
-      foreach (var u in users)
+    case "2":
+      if (currentUser.Role != Role.Staff)
       {
-        Console.WriteLine($"- {u.Name} (Role: {u.Role})");
+        Console.WriteLine("Only staff may add journal entries.");
+        break;
       }
-    }
-    else if (choice == "2") break;
+
+      Console.Write("Enter patient id: ");
+      if (!int.TryParse(Console.ReadLine(), out int pidAdd))
+      {
+        Console.WriteLine("Invalid id.");
+        break;
+      }
+      if (!currentUser.AssignedPatientIds.Contains(pidAdd))
+      {
+        Console.WriteLine("You are not assigned to that patient.");
+        break;
+      }
+      Console.Write("Entry content: ");
+      var content = Console.ReadLine() ?? "";
+      Console.Write("Permission (1=StaffOnly,2=AllStaff,3=Patient): ");
+      var permInput = Console.ReadLine() ?? "1";
+      var perm = permInput switch
+      {
+        "2" => PermissionLevel.AllStaff,
+        "3" => PermissionLevel.Patient,
+        _ => PermissionLevel.StaffOnly
+      };
+      patientService.AddJournalEntry(pidAdd, content, perm, currentUser.Name);
+      break;
+
+    case "3":
+      if (currentUser.Role != Role.Admin)
+      {
+        Console.WriteLine("Admin only.");
+        break;
+      }
+
+      Console.WriteLine("\n--- Admin Menu ---");
+      Console.WriteLine("a) Create patient");
+      Console.WriteLine("b) Create staff user");
+      Console.WriteLine("c) Create patient user");
+      Console.WriteLine("d) Assign patient to staff");
+      Console.Write("Choice: ");
+      var a = Console.ReadLine() ?? "";
+
+      if (a == "a")
+      {
+        Console.Write("Patient name: ");
+        var pn = Console.ReadLine() ?? "";
+        Console.Write("Age: ");
+        if (!int.TryParse(Console.ReadLine(), out int pa)) { Console.WriteLine("Invalid age."); break; }
+        var np = new Patient { Name = pn, Age = pa };
+        patientService.RegisterPatient(np);
+        userService.SaveData();
+        patientService.SaveData();
+      }
+      else if (a == "b")
+      {
+        Console.Write("Staff name: ");
+        var sn = Console.ReadLine() ?? "";
+        var ns = new User { Name = sn, Role = Role.Staff };
+        userService.AddUser(ns);
+        userService.SaveData();
+      }
+      else if (a == "c")
+      {
+        Console.Write("Patient user name: ");
+        var un = Console.ReadLine() ?? "";
+        Console.Write("Which patient id to link: ");
+        if (!int.TryParse(Console.ReadLine(), out int linkId)) { Console.WriteLine("Invalid id."); break; }
+        var up = new User { Name = un, Role = Role.Patient };
+        up.AssignedPatientIds.Add(linkId);
+        userService.AddUser(up);
+        userService.SaveData();
+      }
+      else if (a == "d")
+      {
+        Console.Write("Staff name to assign to: ");
+        var sname = Console.ReadLine() ?? "";
+        var staffUser = userService.FindByName(sname);
+        if (staffUser == null || staffUser.Role != Role.Staff) { Console.WriteLine("Staff not found."); break; }
+
+        Console.Write("Patient id: ");
+        if (!int.TryParse(Console.ReadLine(), out int patId)) { Console.WriteLine("Invalid id."); break; }
+        var p = patientService.GetPatient(patId);
+        if (p == null) { Console.WriteLine("Patient not found."); break; }
+
+        if (!staffUser.AssignedPatientIds.Contains(patId))
+          staffUser.AssignedPatientIds.Add(patId);
+
+        userService.SaveData();
+        Console.WriteLine($"Assigned patient {p.Name} to {staffUser.Name}");
+      }
+      break;
+
+    case "4":
+      userService.SaveData();
+      patientService.SaveData();
+      Console.WriteLine("Saved.");
+      break;
+
+    case "0":
+      userService.SaveData();
+      patientService.SaveData();
+      running = false;
+      break;
+
+    default:
+      Console.WriteLine("Invalid option.");
+      break;
   }
 }
+
+Console.WriteLine("Goodbye!");

@@ -1,9 +1,15 @@
-namespace SmartJournalSystem.Models;
+using System.Collections.Generic;
 
-public class Patient
+namespace SmartJournalSystem.Models
 {
-  public int Id { get; set; }
-  public string Name { get; set; } = "";
-  public int Age { get; set; }
-  public List<JournalEntry> JournalsEnries { get; set; } = new();
+  // Representerar en patient
+  public class Patient
+  {
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public int Age { get; set; }
+
+    // Viktigt: lista med journalanteckningar för patienten
+    public List<JournalEntry> JournalEntries { get; set; } = new();
+  }
 }
