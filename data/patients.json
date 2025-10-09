@@ -1,0 +1,48 @@
+[
+  {
+    "Id": 1,
+    "Name": "Alice",
+    "Age": 30,
+    "JournalEntries": [
+      {
+        "Id": 1,
+        "PatientId": 1,
+        "Content": "General checkup OK",
+        "Author": "Dr.Smith",
+        "Permission": 2,
+        "CreatedAt": "2025-10-09T19:55:14.463841+02:00"
+      },
+      {
+        "Id": 2,
+        "PatientId": 1,
+        "Content": "Staff-only note",
+        "Author": "Dr.Smith",
+        "Permission": 0,
+        "CreatedAt": "2025-10-09T19:55:14.4643242+02:00"
+      }
+    ]
+  },
+  {
+    "Id": 2,
+    "Name": "Bob",
+    "Age": 45,
+    "JournalEntries": [
+      {
+        "Id": 3,
+        "PatientId": 2,
+        "Content": "Routine test completed",
+        "Author": "Dr.Smith",
+        "Permission": 2,
+        "CreatedAt": "2025-10-09T19:55:14.4650661+02:00"
+      },
+      {
+        "Id": 4,
+        "PatientId": 2,
+        "Content": "Kidney issues",
+        "Author": "Dr.Smith",
+        "Permission": 0,
+        "CreatedAt": "2025-10-09T19:58:07.8758383+02:00"
+      }
+    ]
+  }
+]

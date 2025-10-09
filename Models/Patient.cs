@@ -11,5 +11,6 @@ namespace SmartJournalSystem.Models
 
     // Viktigt: lista med journalanteckningar för patienten
     public List<JournalEntry> JournalEntries { get; set; } = new();
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
   }
 }

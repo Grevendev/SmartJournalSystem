@@ -1,0 +1,31 @@
+[
+  {
+    "Id": 1,
+    "Name": "AdminUser",
+    "Username": "",
+    "Password": "",
+    "Role": 0,
+    "AssignedPatientIds": []
+  },
+  {
+    "Id": 2,
+    "Name": "Dr.Smith",
+    "Username": "",
+    "Password": "",
+    "Role": 1,
+    "AssignedPatientIds": [
+      1,
+      2
+    ]
+  },
+  {
+    "Id": 3,
+    "Name": "AliceUser",
+    "Username": "",
+    "Password": "",
+    "Role": 2,
+    "AssignedPatientIds": [
+      1
+    ]
+  }
+]

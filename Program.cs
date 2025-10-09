@@ -6,11 +6,11 @@ using System.Linq;
 var patientService = new PatientService();
 var userService = new UserService();
 
-// Ladda data om den finns
+// ===== Ladda data från JSON =====
 patientService.LoadData();
 userService.LoadData();
 
-// Skapa testdata om tomt
+// ===== Skapa testdata om tomt =====
 if (!userService.GetAllUsers().Any())
 {
   Console.WriteLine("🔧 Creating initial test data...");
@@ -20,12 +20,12 @@ if (!userService.GetAllUsers().Any())
   patientService.RegisterPatient(p1);
   patientService.RegisterPatient(p2);
 
-  // skapa användare och tilldela patient-ids
-  var admin = new User { Name = "AdminUser", Role = Role.Admin };
-  var staff = new User { Name = "Dr.Smith", Role = Role.Staff };
-  var patientUser1 = new User { Name = "AliceUser", Role = Role.Patient };
-  patientUser1.AssignedPatientIds.Add(p1.Id);
+  var admin = new User { Name = "AdminUser", Role = Role.Admin, CreatedAt = DateTime.Now };
+  var staff = new User { Name = "Dr.Smith", Role = Role.Staff, CreatedAt = DateTime.Now };
+  var patientUser1 = new User { Name = "AliceUser", Role = Role.Patient, CreatedAt = DateTime.Now };
 
+  // Tilldela patienter
+  patientUser1.AssignedPatientIds.Add(p1.Id);
   staff.AssignedPatientIds.Add(p1.Id);
   staff.AssignedPatientIds.Add(p2.Id);
 
@@ -33,19 +33,16 @@ if (!userService.GetAllUsers().Any())
   userService.AddUser(staff);
   userService.AddUser(patientUser1);
 
-  // journaler
+  // Journaler
   patientService.AddJournalEntry(p1.Id, "General checkup OK", PermissionLevel.Patient, "Dr.Smith");
   patientService.AddJournalEntry(p1.Id, "Staff-only note", PermissionLevel.StaffOnly, "Dr.Smith");
   patientService.AddJournalEntry(p2.Id, "Routine test completed", PermissionLevel.Patient, "Dr.Smith");
 
-  // spara testdata
   userService.SaveData();
   patientService.SaveData();
 }
 
-var users = userService.GetAllUsers();
-
-// ---------- LOGIN ----------
+// ===== LOGIN =====
 User? currentUser = null;
 while (currentUser == null)
 {
@@ -55,17 +52,20 @@ while (currentUser == null)
   if (currentUser == null)
     Console.WriteLine("User not found, try again.");
   else
-    Console.WriteLine($"Welcome {currentUser.Name} ({currentUser.Role})");
+  {
+    Console.WriteLine($"\n✅ Welcome {currentUser.Name} ({currentUser.Role})!");
+    Console.WriteLine($"Your account was created: {currentUser.CreatedAt:yyyy-MM-dd HH:mm}\n");
+  }
 }
 
-// ---------- HUVUDLOOP ----------
+// ===== HUVUDLOOP =====
 bool running = true;
 while (running)
 {
   Console.WriteLine("\n=== Main Menu ===");
-  Console.WriteLine("1) View my assigned patients (Staff) / View my patient record (Patient)");
+  Console.WriteLine("1) View my assigned patients (Staff) / My record (Patient)");
   Console.WriteLine("2) Add journal entry (Staff)");
-  Console.WriteLine("3) Admin: create patient / user / assign");
+  Console.WriteLine("3) Admin: create patient/user/assign");
   Console.WriteLine("4) Save data");
   Console.WriteLine("0) Exit");
   Console.Write("Choice: ");
@@ -81,7 +81,7 @@ while (running)
         {
           var p = patientService.GetPatient(pid);
           if (p != null)
-            Console.WriteLine($"{p.Id}: {p.Name} ({p.Age} y)");
+            Console.WriteLine($"{p.Id}: {p.Name} ({p.Age} y) - Created: {p.CreatedAt:yyyy-MM-dd HH:mm}");
         }
       }
       else if (currentUser.Role == Role.Patient)
@@ -89,11 +89,14 @@ while (running)
         Console.WriteLine("\n-- My journal entries --");
         foreach (var pid in currentUser.AssignedPatientIds)
         {
-          var entries = patientService.GetJournalEntries(currentUser, pid);
           var p = patientService.GetPatient(pid);
-          Console.WriteLine($"\nJournal for {p?.Name}:");
-          foreach (var e in entries)
-            Console.WriteLine($"- [{e.CreatedAt}] {e.Author}: {e.Content} ({e.Permission})");
+          var entries = patientService.GetJournalEntries(currentUser, pid);
+          if (p != null)
+          {
+            Console.WriteLine($"\n📘 Journal for {p.Name} (Created: {p.CreatedAt:yyyy-MM-dd HH:mm})");
+            foreach (var e in entries)
+              Console.WriteLine($" - [{e.CreatedAt:yyyy-MM-dd HH:mm}] {e.Author}: {e.Content} ({e.Permission})");
+          }
         }
       }
       else

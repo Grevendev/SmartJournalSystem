@@ -21,5 +21,6 @@ namespace SmartJournalSystem.Models
 
     // Vilka patient-IDs användaren är tilldelad (för staff) eller vilken patient en patient-användare hör till
     public List<int> AssignedPatientIds { get; set; } = new();
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
   }
 }
